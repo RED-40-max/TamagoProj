@@ -25,15 +25,17 @@ Modified To SH1107: https://wokwi.com/projects/457135064713530369
 │   ├── tamo.cpp --> Anne's OG code
 │   └── tamo3.cpp
 ├── MicroPy/
-│   ├── demo.py --> spinning cubes
+│   ├── demo.py --> modified from [Pico-OLED-Demo]
 │   ├── main.py --> tamo.ccp translate to python
-│   └── SH1107.py --> MicroPy OLED driver for I2C from [SH1107]
+│   └── SH1107.py --> OLED Driver [SH1107]
 └── README.md
 
 ```
 
 ## Sources
 
-[Picotamachibi](https://github.com/kevinmcaleer/picotamachibi): https://github.com/kevinmcaleer/picotamachibi
+[Picotamachibi](https://github.com/kevinmcaleer/picotamachibi): 3D printed shell
 
-[SH1107](https://github.com/peter-l5/SH1107): https://github.com/peter-l5/SH1107
+[SH1107](https://github.com/peter-l5/SH1107): MicroPy OLED driver for I2C
+
+[Pico-OLED-Demo](https://github.com/NathanielEvry/pico-oled-demo): OG Cube spinning demo for SSD1306
