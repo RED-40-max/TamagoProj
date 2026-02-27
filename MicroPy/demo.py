@@ -1,152 +1,112 @@
-# Pico OLED Demo
-#
-# This project is a demo of using the RP2040 Pi Pico and a SSD1306 OLED display with Micropython.
-# It demos creating and moving rectangles on the screen!
-#
-# Created by Nathaniel Evry @NathanielEvry on 2023-04-22
-# My GitHub: https://github.com/altometer
-# GitHub Project Repo: https://github.com/altometer/pico-oled-demo
-#
-# Web-hosted Pico2040 simulator for this project:
-# https://wokwi.com/projects/362799539846585345
+# RP2040 Pico + SH1107 128x128 OLED (I2C) rotating wireframe cubes
 
-import random
+
+# OG: https://wokwi.com/projects/362799539846585345
+#Modified To SH1107: https://wokwi.com/projects/457135064713530369
+
+
 import math
 import utime
 from machine import I2C, Pin
-from ssd1306 import SSD1306_I2C
+from SH1107 import SH1107_I2C  # <-- correct
 
-SCREEN_WIDTH = 128
-SCREEN_HEIGHT = 64
+W = 128
+H = 128
 
-i2c = I2C(0, scl=Pin(1), sda=Pin(0))
-utime.sleep_ms(50)  # delay to setup screen
-oled = SSD1306_I2C(SCREEN_WIDTH, SCREEN_HEIGHT, i2c)
+i2c = I2C(0, scl=Pin(1), sda=Pin(0), freq=400_000)
+utime.sleep_ms(50)
 
-
-def screen_center():
-    return SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2
+OLED_ADDR = 0x3C
+oled = SH1107_I2C(W, H, i2c, address=OLED_ADDR, rotate=90)
+oled.sleep(False)
 
 
 class Cube:
-    def __init__(self, radius, location) -> None:
-        self.points = []
-        self.create_points()
-        self.size = radius
-        self.center = location
+    def __init__(self, size, center):
+        self.size = size
+        self.center = center  # <-- use the passed center
+
+        self.base = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
         self.edges = [
-            (0, 1),
-            (1, 3),
-            (3, 2),
-            (2, 0),
-            (4, 5),
-            (5, 7),
-            (7, 6),
-            (6, 4),
-            (0, 4),
-            (1, 5),
-            (2, 6),
-            (3, 7),
+            (0, 1), (1, 3), (3, 2), (2, 0),
+            (4, 5), (5, 7), (7, 6), (6, 4),
+            (0, 4), (1, 5), (2, 6), (3, 7)
         ]
 
-    def create_points(self):
-        i = (-1, 1)
-        for x in i:
-            for y in i:
-                for z in i:
-                    self.points.append((x, y, z))
+        self.ax = 0.0
+        self.ay = 0.0
+        self.az = 0.0
 
-    def rotate_3d(self, rotation_vector):
-        nodes = [list(node) for node in self.points]
-        x_theta, y_theta, z_theta = rotation_vector
+    def step_rot(self, dax, day, daz):
+        self.ax += dax
+        self.ay += day
+        self.az += daz
 
-        # Rotate around the Z-axis
-        sin_theta = math.sin(z_theta)
-        cos_theta = math.cos(z_theta)
-        for node in nodes:
-            x, y = node[0], node[1]
-            node[0] = x * cos_theta - y * sin_theta
-            node[1] = y * cos_theta + x * sin_theta
+    def rotated(self):
+        ax, ay, az = self.ax, self.ay, self.az
+        sinx, cosx = math.sin(ax), math.cos(ax)
+        siny, cosy = math.sin(ay), math.cos(ay)
+        sinz, cosz = math.sin(az), math.cos(az)
 
-        # Rotate around the X-axis
-        sin_theta = math.sin(x_theta)
-        cos_theta = math.cos(x_theta)
-        for node in nodes:
-            y, z = node[1], node[2]
-            node[1] = y * cos_theta - z * sin_theta
-            node[2] = z * cos_theta + y * sin_theta
+        out = []
+        for x, y, z in self.base:
+            # Z
+            x, y = (x * cosz - y * sinz), (y * cosz + x * sinz)
+            # X
+            y, z = (y * cosx - z * sinx), (z * cosx + y * sinx)
+            # Y
+            x, z = (x * cosy + z * siny), (z * cosy - x * siny)
+            out.append((x, y, z))
 
-        # Rotate around the Y-axis
-        sin_theta = math.sin(y_theta)
-        cos_theta = math.cos(y_theta)
-        for node in nodes:
-            x, z = node[0], node[2]
-            node[0] = x * cos_theta + z * sin_theta
-            node[2] = z * cos_theta - x * sin_theta
+        return out  # <-- correct: AFTER the loop
 
-        self.points = [tuple(node) for node in nodes]
+    def draw(self, oled, dist=6.0):
+        cx, cy = self.center
+        pts = []
 
-    def project_2d(self, nodes, draw_distance):
-        flat_nodes = []
+        for x, y, z in self.rotated():
+            # push cube forward + clip near plane to avoid projection blow-ups
+            z += 4.0
+            if z < -5.0:
+                z = -5.0
 
-        for node in nodes:
-            x, y, z = node
-            flat_x = x * draw_distance / (draw_distance + z)
-            flat_y = y * draw_distance / (draw_distance + z)
-            flat_nodes.append([flat_x, flat_y])
+            denom = dist + z
+            if denom < 0.5:
+                denom = 0.5
 
-        return flat_nodes
+            px = x * dist / denom
+            py = y * dist / denom
 
-    def shift(self, nodes):
-        shifted_nodes = [list(node) for node in nodes]
-        for xy in shifted_nodes:
-            x, y = xy
-            xy[0] += round(x * self.size + center[0])
-            xy[1] += round(y * self.size + center[1])
+            sx = int(px * self.size + cx)
+            sy = int(py * self.size + cy)
+            pts.append((sx, sy))
 
-        return shifted_nodes
-
-    def draw(self, oled, distance):
-        nodes = self.project_2d(self.points, distance)
-        positioned_nodes = self.shift(nodes)
-
-        for xy in positioned_nodes:
-            x, y = xy
-            oled.pixel(round(x), round(y), 1)
-
-        for edge in self.edges:
-            x1, y1 = positioned_nodes[edge[0]]
-            x2, y2 = positioned_nodes[edge[1]]
-            oled.line(round(x1), round(y1), round(x2), round(y2), 1)
+        for a, b in self.edges:
+            x1, y1 = pts[a]
+            x2, y2 = pts[b]
+            oled.line(x1, y1, x2, y2, 1)
 
 
-def sleep(s: int = 0):
-    # I'm lazy and I want my own sleep in seconds call.
-    print(f"sleeping for {s} seconds...")
-    utime.sleep_ms(s * 1000)
+# center down a bit because of 2 lines of text
+center = (W // 2 - 25, H // 2 + 10)
 
+cubes = [
+    Cube(40, center),
+    Cube(25, center),
+    Cube(12, center),
+]
 
-sleep(1)
-
-# helpers
-center = screen_center()
-cx, cy = center
-
-# Create a few cubes for the array
-cubes = []
-cubes.append(Cube(16, center))
-cubes.append(Cube(10, center))
-cubes.append(Cube(5, center))
-
-oled.fill(0)
-
-# main loop
 while True:
     oled.fill(0)
-    oled.text("-Anne the GOAT-", 0, 0, 1)
-    cubes[0].rotate_3d((0.03, 0.06, 0.09))
-    cubes[1].rotate_3d((0.09, 0.03, 0.06))
-    cubes[2].rotate_3d((0.06, 0.09, 0.03))
+    oled.text("SH1107 demo", 0, 0, 1)
+    oled.text("addr 0x3c", 0, 10, 1)
+
+    cubes[0].step_rot(0.03, 0.06, 0.09)
+    cubes[1].step_rot(0.09, 0.03, 0.06)
+    cubes[2].step_rot(0.06, 0.09, 0.03)
+
     for c in cubes:
-        c.draw(oled, 5)
+        c.draw(oled, dist=6.0)
+
     oled.show()
+    utime.sleep_ms(20)

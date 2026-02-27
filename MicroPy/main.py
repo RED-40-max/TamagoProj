@@ -2,7 +2,7 @@
 
 import time
 from machine import I2C, Pin
-from ssd1306 import SSD1306_I2C
+from SH1107 import SSD1306_I2C
 
 SCREEN_WIDTH = 128
 SCREEN_HIGH = 64
