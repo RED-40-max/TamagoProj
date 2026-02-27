@@ -1,5 +1,6 @@
 # TamagoProj
 ANNNEEEE
+
 A Raspberry Pi Pico Tamagotchi-style project with an SH1107 OLED display.
 Includes:
 - MicroPython demo + display driver
@@ -16,7 +17,7 @@ Modified To SH1107: https://wokwi.com/projects/457135064713530369
 
 ```txt
 .
-├── 3DPrint(took)/ --> sourced from [Picotamachibi]
+├── 3DPrint/ --> sourced from [Picotamachibi]
 │   ├── Bottom.stl
 │   └── Top.stl
 ├── InC/
