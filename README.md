@@ -16,7 +16,7 @@ Modified To SH1107: https://wokwi.com/projects/457135064713530369
 
 ```txt
 .
-├── 3DPrint(took)/ --> sourced from [Picotamachibi](https://github.com/kevinmcaleer/picotamachibi)
+├── 3DPrint(took)/ --> sourced from [Picotamachibi]
 │   ├── Bottom.stl
 │   └── Top.stl
 ├── InC/
@@ -26,12 +26,12 @@ Modified To SH1107: https://wokwi.com/projects/457135064713530369
 ├── MicroPy/
 │   ├── demo.py --> spinning cubes
 │   ├── main.py --> tamo.ccp translate to python
-│   └── SH1107.py --> MicroPy OLED driver for I2C from [SH1107](https://github.com/peter-l5/SH1107)
+│   └── SH1107.py --> MicroPy OLED driver for I2C from [SH1107]
 └── README.md
 
 ```
 
 ## Sources
 
-[Picotamachibi]( https://github.com/kevinmcaleer/picotamachibi): https://github.com/kevinmcaleer/picotamachibi
+[Picotamachibi](https://github.com/kevinmcaleer/picotamachibi): https://github.com/kevinmcaleer/picotamachibi
 [SH1107](https://github.com/peter-l5/SH1107): https://github.com/peter-l5/SH1107
