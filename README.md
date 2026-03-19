@@ -10,8 +10,8 @@ Includes:
 
 ## Demo simulation
     OG: https://wokwi.com/projects/362799539846585345
-
 Modified To SH1107: https://wokwi.com/projects/457135064713530369
+Modified to SSD1306: https://wokwi.com/projects/458959319264119809
 
 ## Repo Structure
 
